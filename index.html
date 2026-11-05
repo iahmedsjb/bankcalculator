@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ব্যাংকিং ক্যালকুলেটর</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: sans-serif; background: #f2f5f9; margin: 0; padding: 16px; color: #222; }
+  .wrap { max-width: 440px; margin: auto; }
+  h1 { text-align: center; color: #1a5276; font-size: 22px; }
+  h2 { color: #1a5276; font-size: 20px; margin: 0 0 8px; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .menu a { display: block; background: #fff; padding: 18px; margin-bottom: 12px; border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.1); text-decoration: none; color: #1a5276; font-size: 18px; font-weight: bold; }
+  .menu a small { display: block; color: #666; font-weight: normal; font-size: 13px; margin-top: 4px; }
+  .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+  .back { display: inline-block; margin-bottom: 12px; color: #1a5276; text-decoration: none; font-size: 15px; }
+  label { display: block; margin-top: 12px; font-size: 14px; color: #444; }
+  input, select { width: 100%; padding: 10px; margin-top: 4px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; background: #fff; }
+  button { width: 100%; margin-top: 16px; padding: 12px; background: #1a5276; color: #fff; border: 0; border-radius: 8px; font-size: 16px; }
+  .result { margin-top: 16px; background: #eaf2f8; padding: 12px; border-radius: 8px; display: none; }
+  .result p { margin: 6px 0; }
+  .note { font-size: 12px; color: #777; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="page" id="page-home">
+    <h1>ব্যাংকিং ক্যালকুলেটর</h1>
+    <div class="menu">
+      <a href="#loan">লোন ক্যালকুলেটর<small>মাসিক কিস্তি (ইএমআই) ও মোট সুদ</small></a>
+      <a href="#fdr">এফডিআর ক্যালকুলেটর<small>মেয়াদ শেষে প্রাপ্য টাকা</small></a>
+      <a href="#dps">ডিপিএস ক্যালকুলেটর<small>মাসিক জমা থেকে মেয়াদ শেষে প্রাপ্য টাকা</small></a>
+    </div>
+  </div>
+
+  <div class="page" id="page-loan">
+    <a class="back" href="#home">← হোম</a>
+    <div class="card">
+      <h2>লোন ক্যালকুলেটর</h2>
+      <label>ঋণের পরিমাণ (টাকা)</label>
+      <input type="number" id="l_p" placeholder="যেমন: 500000">
+      <label>বার্ষিক সুদের হার (%)</label>
+      <input type="number" id="l_r" step="0.01" placeholder="যেমন: 10">
+      <label>মেয়াদ (মাস)</label>
+      <input type="number" id="l_n" placeholder="যেমন: 36">
+      <label>হিসাবের পদ্ধতি</label>
+      <select id="l_m">
+        <option value="red">রিডিউসিং ব্যালেন্স</option>
+        <option value="flat">ফ্ল্যাট রেট</option>
+      </select>
+      <button onclick="calcLoan()">হিসাব করুন</button>
+      <div class="result" id="l_out"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-fdr">
+    <a class="back" href="#home">← হোম</a>
+    <div class="card">
+      <h2>এফডিআর ক্যালকুলেটর</h2>
+      <label>জমার পরিমাণ (টাকা)</label>
+      <input type="number" id="f_p" placeholder="যেমন: 1000000">
+      <label>বার্ষিক সুদের হার (%)</label>
+      <input type="number" id="f_r" step="0.01" placeholder="যেমন: 8">
+      <label>মেয়াদ (মাস)</label>
+      <input type="number" id="f_n" placeholder="যেমন: 12">
+      <label>সুদ হিসাবের ধরন</label>
+      <select id="f_m">
+        <option value="4">ত্রৈমাসিক চক্রবৃদ্ধি</option>
+        <option value="12">মাসিক চক্রবৃদ্ধি</option>
+        <option value="1">বার্ষিক চক্রবৃদ্ধি</option>
+        <option value="0">সরল সুদ (মেয়াদ শেষে)</option>
+      </select>
+      <label>উৎসে কর (%) — না থাকলে 0</label>
+      <input type="number" id="f_t" step="0.01" value="0">
+      <button onclick="calcFdr()">হিসাব করুন</button>
+      <div class="result" id="f_out"></div>
+      <div class="note">ব্যাংকভেদে হিসাবের পদ্ধতি সামান্য আলাদা হতে পারে। ফলাফলটি আনুমানিক।</div>
+    </div>
+  </div>
+
+  <div class="page" id="page-dps">
+    <a class="back" href="#home">← হোম</a>
+    <div class="card">
+      <h2>ডিপিএস ক্যালকুলেটর</h2>
+      <label>মাসিক জমা (টাকা)</label>
+      <input type="number" id="d_p" placeholder="যেমন: 5000">
+      <label>বার্ষিক সুদের হার (%)</label>
+      <input type="number" id="d_r" step="0.01" placeholder="যেমন: 7">
+      <label>মেয়াদ (মাস)</label>
+      <input type="number" id="d_n" placeholder="যেমন: 60">
+      <label>উৎসে কর (%) — না থাকলে 0</label>
+      <input type="number" id="d_t" step="0.01" value="0">
+      <button onclick="calcDps()">হিসাব করুন</button>
+      <div class="result" id="d_out"></div>
+      <div class="note">মাসিক চক্রবৃদ্ধি ধরে হিসাব করা হয়েছে। ব্যাংকের প্রকৃত অঙ্ক সামান্য ভিন্ন হতে পারে।</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// @ts-nocheck
+
+function route() {
+  var h = location.hash.slice(1) || 'home';
+  var pages = document.querySelectorAll('.page');
+  var found = false;
+  for (var i = 0; i !== pages.length; i++) {
+    var on = (pages[i].id === 'page-' + h);
+    if (on) { pages[i].classList.add('active'); found = true; }
+    else { pages[i].classList.remove('active'); }
+  }
+  if (!found) { document.getElementById('page-home').classList.add('active'); }
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+route();
+
+function fmt(x) {
+  return x.toLocaleString('en-IN', { maximumFractionDigits: 2 }) + ' টাকা';
+}
+
+function val(id) {
+  var v = parseFloat(document.getElementById(id).value);
+  return isNaN(v) ? 0 : v;
+}
+
+function show(id, rows) {
+  var html = '';
+  for (var i = 0; i !== rows.length; i++) {
+    html += '<p>' + rows[i][0] + ': <b>' + rows[i][1] + '</b></p>';
+  }
+  var el = document.getElementById(id);
+  el.innerHTML = html;
+  el.style.display = 'block';
+}
+
+function bad() {
+  alert('সব ঘরে সঠিক সংখ্যা দিন');
+}
+
+function calcLoan() {
+  var P = val('l_p');
+  var a = val('l_r');
+  var n = Math.round(val('l_n'));
+  if (P <= 0 || n <= 0 || a < 0) { bad(); return; }
+
+  var emi = 0;
+  var total = 0;
+  if (document.getElementById('l_m').value === 'flat') {
+    total = P + P * (a / 100) * (n / 12);
+    emi = total / n;
+  } else {
+    var r = a / 12 / 100;
+    if (r === 0) {
+      emi = P / n;
+    } else {
+      emi = P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+    }
+    total = emi * n;
+  }
+  show('l_out', [
+    ['মাসিক কিস্তি', fmt(emi)],
+    ['মোট সুদ', fmt(total - P)],
+    ['মোট পরিশোধ', fmt(total)]
+  ]);
+}
+
+function calcFdr() {
+  var P = val('f_p');
+  var a = val('f_r');
+  var n = val('f_n');
+  var tax = val('f_t');
+  var freq = parseInt(document.getElementById('f_m').value, 10);
+  if (P <= 0 || n <= 0 || a < 0 || tax < 0) { bad(); return; }
+
+  var t = n / 12;
+  var r = a / 100;
+  var maturity = 0;
+  if (freq === 0) {
+    maturity = P * (1 + r * t);
+  } else {
+    maturity = P * Math.pow(1 + r / freq, freq * t);
+  }
+  var interest = maturity - P;
+  var taxAmt = interest * tax / 100;
+  show('f_out', [
+    ['মোট সুদ', fmt(interest)],
+    ['কর কর্তন', fmt(taxAmt)],
+    ['নিট সুদ', fmt(interest - taxAmt)],
+    ['মেয়াদ শেষে প্রাপ্য', fmt(P + interest - taxAmt)]
+  ]);
+}
+
+function calcDps() {
+  var D = val('d_p');
+  var a = val('d_r');
+  var n = Math.round(val('d_n'));
+  var tax = val('d_t');
+  if (D <= 0 || n <= 0 || a < 0 || tax < 0) { bad(); return; }
+
+  var i = a / 12 / 100;
+  var fv = 0;
+  if (i === 0) {
+    fv = D * n;
+  } else {
+    fv = D * ((Math.pow(1 + i, n) - 1) / i) * (1 + i);
+  }
+  var deposit = D * n;
+  var interest = fv - deposit;
+  var taxAmt = interest * tax / 100;
+  show('d_out', [
+    ['মোট জমা', fmt(deposit)],
+    ['মোট সুদ', fmt(interest)],
+    ['কর কর্তন', fmt(taxAmt)],
+    ['মেয়াদ শেষে প্রাপ্য', fmt(fv - taxAmt)]
+  ]);
+}
+</script>
+</body>
+</html>
